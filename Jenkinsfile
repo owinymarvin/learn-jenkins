@@ -1,22 +1,11 @@
 pipeline {
     agent {
-        docker {
-            image 'node:18-alpine'
-            reuseNode: true
-        }
+        docker { image 'node:22.17.1-alpine3.22' }
     }
     stages {
-        stage('Build') {
+        stage('Test') {
             steps {
-                sh '''
-                    ls -la
-                    node --version
-                    npm --version
-                    npm ci
-                    npm run build
-                    ls -la
-                    touch file.txt
-                '''
+                sh 'node --eval "console.log(process.platform,process.env.CI)"'
             }
         }
     }

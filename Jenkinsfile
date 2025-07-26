@@ -1,6 +1,7 @@
 pipeline {
     agent any
     stages {
+        /*
         stage('Build') {
             agent {
                 docker { 
@@ -33,6 +34,7 @@ pipeline {
                 '''
             }
         }
+        */
         stage('E2E End To End ') {
             agent {
                 docker { 
@@ -42,6 +44,8 @@ pipeline {
             }
             steps {
                 sh '''
+                    npm ci
+                    npm run build
                     npm install -g serve 
                     serve -s build
                     npx playwright test

@@ -1,7 +1,9 @@
 pipeline {
     agent any
     environment {
+        // enter the Project ID
         NETLIFY_SITE_ID = '1b0e8fe4-d807-4466-a7e4-986eb919922b'
+        // enter the access token created. Also saved in the Jenkins credential manager
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
     stages {
@@ -81,6 +83,7 @@ pipeline {
                     npx netlify --version
                     echo "Deploying to Production, Project ID $NETLIFY_SITE_ID"
                     npx netlify status
+                    npx netlify deploy --dir=build --prod
                 '''
             }
         }

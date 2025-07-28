@@ -9,6 +9,11 @@ pipeline {
         CI_ENVIRONMENT_URL = 'https://ephemeral-mochi-43fc3e.netlify.app/'
     }
     stages {
+        stage('Docker'){
+            steps {
+                sh 'docker build -t my-playwright .'
+            }
+        }
         stage('Build') {
             agent {
                 docker { 
@@ -58,7 +63,6 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            # npx serve -s build &
                             npx serve -s build > /dev/null 2>&1 &
                             sleep 30
                             npx playwright test --reporter=html

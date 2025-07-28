@@ -5,17 +5,25 @@ pipeline {
         NETLIFY_SITE_ID = '1b0e8fe4-d807-4466-a7e4-986eb919922b'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
         REACT_APP_VERSION = "1.0.${env.BUILD_ID}"
-        CI_ENVIRONMENT_URL = 'https://ephemeral-mochi-43fc3e.netlify.app/' // Your production URL
+        CI_ENVIRONMENT_URL = 'https://ephemeral-mochi-43fc3e.netlify.app/'
     }
 
     stages {
-        
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def appVersionForBuild = "1.0.${env.BUILD_ID}"
+                    sh "docker build --build-arg REACT_APP_VERSION_ARG=${appVersionForBuild} -t my-playwright-app ."
+                }
+            }
+        }
+
         stage('Build & Unit Tests') {
             agent {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '-u root'
                 }
             }
             steps {
@@ -38,7 +46,6 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '-u root'
                 }
             }
             steps {
@@ -60,7 +67,6 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '-u root'
                 }
             }
 
@@ -73,7 +79,6 @@ pipeline {
                         DEPLOY_OUTPUT=$(netlify deploy --dir=build --json)
                         echo "${DEPLOY_OUTPUT}" > deploy-output.json
                     '''
-                    // Set STAGING_URL as an environment variable for subsequent stages
                     env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
                     echo "Staging URL set to: ${env.STAGING_URL}"
                 }
@@ -83,14 +88,13 @@ pipeline {
         stage('Staging E2E') {
             agent {
                 docker {
-                    image 'my-playwright-app' // Use the custom image with playwright installed
+                    image 'my-playwright-app'
                     reuseNode true
-                    args '-u root'
                 }
             }
 
             environment {
-                CI_ENVIRONMENT_URL = "${env.STAGING_URL}" // Use the dynamically deployed staging URL
+                CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
             }
 
             steps {
@@ -120,7 +124,6 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '-u root'
                 }
             }
             steps {
@@ -136,13 +139,11 @@ pipeline {
         stage('Production E2E') {
             agent {
                 docker {
-                    image 'my-playwright-app' // Use the custom image with playwright installed
+                    image 'my-playwright-app'
                     reuseNode true
-                    args '-u root'
                 }
             }
             environment {
-                // CI_ENVIRONMENT_URL is already defined globally for production
                 CI_ENVIRONMENT_URL = "${env.CI_ENVIRONMENT_URL}"
             }
             steps {

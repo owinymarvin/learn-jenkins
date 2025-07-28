@@ -72,7 +72,7 @@ pipeline {
                 }
             }
         }
-        stage('Deploy Staging') {
+        stage('Deploy staging') {
             agent {
                 docker { 
                     image 'node:18-alpine' 
@@ -84,12 +84,47 @@ pipeline {
                     npx netlify --version
                     echo "Deploying to Production, Project ID $NETLIFY_SITE_ID"
                     npx netlify status
-                    npx netlify deploy --dir=build
+                    npx netlify deploy --dir=build --json > deploy-output.json
                     echo 'added small changes'
+                    npx node-jq -r '.deploy_url' deploy-output.json
                 '''
+                script {
+                    env.STAGING_URL = sh(script: "npx node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+                }
             }
         }
-        stage('Deploy Prodution') {
+        stage('Staging E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
+            }
+
+            steps {
+                sh '''
+                    npx playwright test  --reporter=html
+                '''
+            }
+
+            post {
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }
+        }
+        stage('Approval') {
+            steps {
+                timeout(time: 15, unit: 'MINUTES') {
+                    input message: 'Do you wish to deploy to production?', ok: 'Yes, I am sure!'
+                }
+            }
+        }
+        stage('Deploy Production') {
             agent {
                 docker { 
                     image 'node:18-alpine' 
@@ -102,7 +137,6 @@ pipeline {
                     echo "Deploying to Production, Project ID $NETLIFY_SITE_ID"
                     npx netlify status
                     npx netlify deploy --dir=build --prod
-                    echo 'added small changes'
                 '''
             }
         }
@@ -114,23 +148,18 @@ pipeline {
                 }
             }
             environment {
-                // production url
                 CI_ENVIRONMENT_URL = 'https://ephemeral-mochi-43fc3e.netlify.app/'
             }
             steps {
                 sh '''
-                    npm install serve
-                    npx serve -s build &
-                    sleep 10
                     npx playwright test --reporter=html
                 '''
             }
             post{
                 always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright Prodn E2E', reportTitles: '', useWrapperFileDirectly: true])
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
                 }
             }
         }
-
     }
 }

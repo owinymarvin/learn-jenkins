@@ -18,7 +18,9 @@ pipeline {
             agent {
                 docker {
                     image 'amazon/aws-cli'
-                    command '/bin/bash'
+                    # Corrected: Use args to provide the command to run within the container.
+                    # 'bash' or '/bin/bash' is usually sufficient.
+                    args 'bash'
                     reuseNode true
                 }
             }
@@ -53,7 +55,7 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.json:/seccomp_profile.json'
+                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.graviton:/seccomp_profile.graviton'
                 }
             }
             steps {
@@ -91,7 +93,7 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.json:/seccomp_profile.json'
+                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.graviton -v $PWD/seccomp_profile.graviton:/seccomp_profile.graviton'
                 }
             }
 
@@ -137,7 +139,7 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
-                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.json:/seccomp_profile.json'
+                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.graviton -v $PWD/seccomp_profile.graviton:/seccomp_profile.graviton'
                 }
             }
             environment {

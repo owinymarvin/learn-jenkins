@@ -5,6 +5,8 @@ pipeline {
         NETLIFY_SITE_ID = '1b0e8fe4-d807-4466-a7e4-986eb919922b'
         // enter the access token created. Also saved in the Jenkins credential manager
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
+        // production url
+        CI_ENVIRONMENT_URL = 'https://ephemeral-mochi-43fc3e.netlify.app/'
     }
     stages {
         stage('Build') {
@@ -64,13 +66,12 @@ pipeline {
                     }
                     post{
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright Local report', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
             }
         }
-
         stage('Deploy') {
             agent {
                 docker { 
@@ -88,5 +89,31 @@ pipeline {
                 '''
             }
         }
+        stage('Production E2E ') {
+            agent {
+                docker { 
+                    image 'mcr.microsoft.com/playwright:v1.54.0-noble' 
+                    reuseNode true
+                }
+            }
+            environment {
+                // production url
+                CI_ENVIRONMENT_URL = 'https://ephemeral-mochi-43fc3e.netlify.app/'
+            }
+            steps {
+                sh '''
+                    npm install serve
+                    npx serve -s build &
+                    sleep 10
+                    npx playwright test --reporter=html
+                '''
+            }
+            post{
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright Prodn E2E', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }
+        }
+
     }
 }

@@ -1,11 +1,15 @@
 pipeline {
     agent any
-    stages {
 
+    environment {
+        REACT_APP_VERSION = "1.0.${env.BUILD_ID}"
+    }
+
+    stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t my-playwright-app .'
+                    sh "docker build --build-arg REACT_APP_VERSION_ARG=${REACT_APP_VERSION} -t my-playwright-app ."
                 }
             }
         }

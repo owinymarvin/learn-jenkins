@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'my-playwright-app'
+            reuseNode true
+        }
+    }
 
     environment {
         NETLIFY_SITE_ID = '1b0e8fe4-d807-4466-a7e4-986eb919922b'
@@ -10,22 +15,7 @@ pipeline {
 
     stages {
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    def appVersionForBuild = "1.0.${env.BUILD_ID}"
-                    sh "docker build --build-arg REACT_APP_VERSION_ARG=${appVersionForBuild} -t my-playwright-app ."
-                }
-            }
-        }
-
         stage('Build & Unit Tests') {
-            agent {
-                docker {
-                    image 'my-playwright-app'
-                    reuseNode true
-                }
-            }
             steps {
                 sh '''
                     ls -la
@@ -46,6 +36,7 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
+                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.json:/seccomp_profile.json'
                 }
             }
             steps {
@@ -63,13 +54,6 @@ pipeline {
         }
 
         stage('Deploy Staging') {
-            agent {
-                docker {
-                    image 'my-playwright-app'
-                    reuseNode true
-                }
-            }
-
             steps {
                 script {
                     sh '''
@@ -90,6 +74,7 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
+                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.json:/seccomp_profile.json'
                 }
             }
 
@@ -120,12 +105,6 @@ pipeline {
         }
 
         stage('Deploy Production') {
-            agent {
-                docker {
-                    image 'my-playwright-app'
-                    reuseNode true
-                }
-            }
             steps {
                 sh '''
                     netlify --version
@@ -141,6 +120,7 @@ pipeline {
                 docker {
                     image 'my-playwright-app'
                     reuseNode true
+                    args '--init --ipc=host --security-opt seccomp=seccomp_profile.json -v $PWD/seccomp_profile.json:/seccomp_profile.json'
                 }
             }
             environment {

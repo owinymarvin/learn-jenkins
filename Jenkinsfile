@@ -18,8 +18,6 @@ pipeline {
             agent {
                 docker {
                     image 'amazon/aws-cli'
-                    # Corrected: Use args to provide the command to run within the container.
-                    # 'bash' or '/bin/bash' is usually sufficient.
                     args 'bash'
                     reuseNode true
                 }

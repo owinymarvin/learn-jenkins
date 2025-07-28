@@ -18,7 +18,6 @@ pipeline {
             agent {
                 docker {
                     image 'amazon/aws-cli'
-                    args 'bash'
                     reuseNode true
                 }
             }

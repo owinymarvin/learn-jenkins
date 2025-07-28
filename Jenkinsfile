@@ -9,15 +9,7 @@ pipeline {
     }
 
     stages {
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    sh 'docker build -t my-playwright-app .'
-                }
-            }
-        }
-
+        
         stage('Build & Unit Tests') {
             agent {
                 docker {
